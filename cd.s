@@ -4,16 +4,8 @@
     permission_denied_error: .string "Error: Permission denied\n"
     bad_address_error: .string "Error: Bad address\n"
     not_a_directory_error: .string "Error: Not a directory\n"
-    directory:
-    .string "cd.s"
 .section .text
 .align 16
-.globl main
-
-main:
-    lea directory(%rip), %rdi
-    call cd
-    call exit_program
 
 cd:
     pushq %rbp
@@ -64,5 +56,5 @@ success:
     ret
 exit_program:
     mov $60, %rax
-    mov $1, %rbx
+    mov $0, %rbx
     syscall
