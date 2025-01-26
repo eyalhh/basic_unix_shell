@@ -1,6 +1,15 @@
+
+
 The implementation is as follows:
 We will have a loop that outputs the string "myshell>" everytime, and waits for inputs.
 We will check the input if its a "cd" or "exit" command, if so we will handle them manually.
 If it's not a "cd" nor an "exit" command, we will use "fork" syscall to create a child process and then "execve" to change that child process image to the inputted command process image.
+We will also have separate files for the built-in commands, (for "exit", because its simplicity, we would just make it in the main file").
+
+In "cd.s" file we will have the function:
+int cd(char* directory);
+(returns 1 if success -1 if error) - the function itself already handles the errors
+which changes the directory from current directory to the inputted directory.
+
 How will we handle the common errors:
 1.
