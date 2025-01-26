@@ -11,5 +11,14 @@ int cd(char* directory);
 (returns 1 if success -1 if error) - the function itself already handles the errors
 which changes the directory from current directory to the inputted directory.
 
+We will also have a file called "parsing_strings.s" which will have functions useful for parsing strings and comparing them:
+1. int compare(char* str1, char* str2, int length); -> will return 1 if they are equal 0 otherwise
+1. void divide(char* buf) -> str1 will be in the structure of a command:
+"command_name flags args"
+will return nothing , will store the offset of each string from the beginning (seperated by a whitespace) in the memory after the address the buffer is located (on the stack)
+example:
+if we have the buffer "ls -l -a dir_example\n"
+then it will store the corresponding offets 0,3,6,9 in the memory after the buffer:
+"ls -l -a dir_example0369"
 How will we handle the common errors:
 1.
