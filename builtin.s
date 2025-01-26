@@ -57,5 +57,5 @@ success:
 exit_builtin:
     # gets status code in rdi
     mov $60, %rax
-    movq $rdi, %rbx
+    movq %rdi, %rbx
     syscall
