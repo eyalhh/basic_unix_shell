@@ -1,6 +1,7 @@
 .section .text
 .globl main
 main:
+exit_program:
     mov $60, %rax
-    mov $1, %rbx
+    mov $0, %rbx
     syscall
