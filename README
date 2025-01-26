@@ -1,0 +1,6 @@
+The implementation is as follows:
+We will have a loop that outputs the string "myshell>" everytime, and waits for inputs.
+We will check the input if its a "cd" or "exit" command, if so we will handle them manually.
+If it's not a "cd" nor an "exit" command, we will use "fork" syscall to create a child process and then "execve" to change that child process image to the inputted command process image.
+How will we handle the common errors:
+1.
