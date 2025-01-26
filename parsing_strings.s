@@ -1,3 +1,5 @@
+.section .rodata
+    eyal: .string "eyal\0"
 .section .text
 .align 16
 .globl compare
@@ -6,11 +8,21 @@ compare:
     pushq %rbp
     movq %rsp, %rbp
     xorq %r12, %r12
-    // pointer to str1 in rdi
-    // pointer to str2 in rsi
-    // length of str1,str2 in rdx
+    # pointer to str1 in rdi
+    # pointer to str2 in rsi
+    call length
+    # rax gets length of str1
+    movq %rax, %r14
+    pushq %rdi
+    movq %rsi, %rdi
+    call length
+    movq %rax, %r15
+    cmpq %r14, %r15
+    popq %rdi
+    jne not_equal
+
 loop:
-    cmp %r12, %rdx
+    cmp %r12, %r14
     je equal
     movzbq (%rdi, %r12), %r10
     movzbq (%rsi, %r12), %r11
@@ -49,3 +61,21 @@ return_from_count_args:
     movq %rbp, %rsp
     popq %rbp
     ret
+length:
+    pushq %rbp
+    movq %rsp, %rbp
+    pushq %rdi
+    # char* str stored in rdi - count until \0
+    xorq %rax, %rax
+loop__:
+    cmpb $0, (%rdi)
+    je return_from_length
+    incq %rax
+    incq %rdi
+    jmp loop__
+return_from_length:
+    popq %rdi
+    movq %rbp, %rsp
+    popq %rbp
+    ret
+

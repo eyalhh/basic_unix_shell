@@ -10,6 +10,7 @@
 .extern compare
 .extern exit_builtin
 .extern args_count
+.extern parse_the_arguments
 main:
     pushq %rbp
     movq %rsp, %rbp
@@ -26,25 +27,31 @@ start_loop:
     call read
     movq %r12, %rdi
     call args_count
-parsing:
+    call parse_the_arguments
+parse_the_arguments:
     pushq %rbp
     movq %rsp, %rbp
     incq %rax
     cmp $6, %rax
     jg ready_the_stack
 stack_ready:
+    xorq %rdi, %rdi
+    xorq %rsi, %rsi
+    xorq %rdx, %rdx
+    xorq %rcx, %rcx
+    xorq %r8, %r8
+    xorq %r9, %r9
     xorq %r13, %r13
     incq %r13
     movq %r12, %rdi
-
-parsing_loop:
+_loop:
     cmpb $32, (%r12)
     je found_space
     cmpb $10, (%r12)
     je found_new_line
 return_to:
     incq %r12
-    jmp parsing_loop
+    jmp _loop
 found_space:
     movb $0, (%r12) # set the space to be null char , so that the string will be null terminated.
     incq %r13
@@ -61,6 +68,7 @@ found_space:
     jmp insert_to_stack_inverse
 ready_the_stack:
     xorq %r15, %r15
+    pushq $0 # load the envp into stack
     sub $6, %rax
     lea (%r15,%rax,8), %rax
     subq %rax, %rsp
@@ -87,10 +95,61 @@ insert_to_stack_inverse:
     jmp return_to
 found_new_line:
     movb $0, (%r12)
-    jmp execute_command
 execute_command:
+    # rdi already stores the command name
+check_if_cd:
+    pushq %rdi
+    pushq %rsi
+    pushq %rdx
+    leaq cd_command(%rip), %rsi
+    call compare
+    cmp $1, %rax
+    je execute_cd
+    # check edge cases - implicit cd command using ./ or /
+check_slash:
+    cmpb $47, (%rdi)
+    je check_directory_after
+    cmpb $46, (%rdi)
+    je dot
+    jmp check_if_exit
+check_directory_after:
+    incq %rdi
+    cmpb $0, (%rdi)
+    je check_if_exit
+    movq %rdi, %rsi
+    jmp execute_cd
+dot:
+    incq %rdi
+    jmp check_slash
+check_if_exit:
+    lea exit_command(%rip), %rsi
+    call compare
+    cmp $1, %rax
+    je execute_exit
+    jmp execute_generic_command
+execute_cd:
+    popq %rdi
+    popq %rdi
+    popq %rdi
+    # now the directory to switch to is at rsi
+    pushq %rdi
+    movq %rsi, %rdi
+    call cd_builtin
+    popq %rdi
+    jmp start_loop
+execute_exit:
+    popq %rdx
+    popq %rsi
+    popq %rdi
+    # now the status code is at rsi
+    pushq %rdi
+    movq %rsi, %rdi
+    call exit_builtin
+execute_generic_command:
+    popq %rdx
+    popq %rsi
+    popq %rdi
     call exit
-
 print:
     pushq %rbp
     movq %rsp, %rbp
