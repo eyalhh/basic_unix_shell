@@ -4,20 +4,29 @@
     permission_denied_error: .string "Error: Permission denied\n"
     bad_address_error: .string "Error: Bad address\n"
     not_a_directory_error: .string "Error: Not a directory\n"
+    directory:
+    .string "cd.s"
 .section .text
 .align 16
+.globl main
+
+main:
+    lea directory(%rip), %rdi
+    call cd
+    call exit_program
+
 cd:
     pushq %rbp
     movq %rsp, %rbp
-    ; pointer to string is in %rdi
+    # pointer to string is in %rdi
     mov $80, %rax
     syscall
-    testq $rax, %rax
+    testq %rax, %rax
     jns success
-    neg %rax ; negative error code stored in %rax
+    neg %rax # negative error code stored in %rax
     cmp $2, %rax
     lea no_file_or_directory_error(%rip), %rsi
-    mov $30, %rdx
+    mov $33, %rdx
     je handle_error
     cmp $12, %rax
     lea out_of_memory_error(%rip), %rsi
@@ -29,7 +38,7 @@ cd:
     je handle_error
     cmp $14, %rax
     lea bad_address_error(%rip), %rsi
-    mvo $19, %rdx
+    mov $19, %rdx
     je handle_error
     cmp $20, %rax
     lea not_a_directory_error(%rip), %rsi
@@ -40,10 +49,10 @@ cd:
 
 
 handle_error:
-    mov $1, %rax ; write syscall
-    mov $2, %rdi ; write to stderr the error
-    ; error string stored in %rsi
-    ; length of error string stored in $rdx
+    mov $1, %rax # write syscall
+    mov $2, %rdi # write to stderr the error
+    # error string stored in %rsi
+    # length of error string stored in $rdx
     syscall
     movq %rbp, %rsp
     popq %rbp
@@ -53,3 +62,7 @@ success:
     movq %rbp, %rsp
     popq %rbp
     ret
+exit_program:
+    mov $60, %rax
+    mov $1, %rbx
+    syscall
