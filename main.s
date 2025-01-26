@@ -1,11 +1,14 @@
 .section .rodata
     prompt: .string "myshell> "
     new_line: .string "\n"
+    cd_command: .string "cd"
+    exit_command: .string "exit"
 .section .text
 .align 16
 .globl main
-.extern cd
+.extern cd_builtin
 .extern compare
+.extern exit_builtin
 main:
     pushq %rbp
     movq %rsp, %rbp
@@ -20,6 +23,7 @@ start_loop:
     movq %r12, %rdi
     mov $1024, %rsi
     call read
+
     jmp start_loop
 
 print:

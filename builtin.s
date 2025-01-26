@@ -7,7 +7,7 @@
 .section .text
 .align 16
 
-cd:
+cd_builtin:
     pushq %rbp
     movq %rsp, %rbp
     # pointer to string is in %rdi
@@ -54,7 +54,8 @@ success:
     movq %rbp, %rsp
     popq %rbp
     ret
-exit_program:
+exit_builtin:
+    # gets status code in rdi
     mov $60, %rax
-    mov $0, %rbx
+    movq $rdi, %rbx
     syscall
