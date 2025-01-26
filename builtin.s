@@ -6,6 +6,8 @@
     not_a_directory_error: .string "Error: Not a directory\n"
 .section .text
 .align 16
+.globl cd_builtin
+.globl exit_builtin
 
 cd_builtin:
     pushq %rbp

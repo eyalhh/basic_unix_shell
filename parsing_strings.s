@@ -1,5 +1,7 @@
 .section .text
 .align 16
+.globl compare
+.globl args_count
 compare:
     pushq %rbp
     movq %rsp, %rbp
@@ -23,6 +25,27 @@ not_equal:
     ret
 equal:
     mov $1, %rax
+    movq %rbp, %rsp
+    popq %rbp
+    ret
+args_count:
+    pushq %rbp
+    movq %rsp, %rbp
+    xorq %rax, %rax
+_loop:
+    # buffer is stored in rdi
+    movb (%rdi), %bl
+    cmp $0x20, %bl
+    je increment_rax
+    cmp $0xA, %bl
+    je return_from_count_args
+    incq %rdi
+    jmp _loop
+increment_rax:
+    incq %rax
+    incq %rdi
+    jmp _loop
+return_from_count_args:
     movq %rbp, %rsp
     popq %rbp
     ret
