@@ -8,7 +8,7 @@
 .align 16
 .globl cd_builtin
 .globl exit_builtin
-
+.globl error_handler
 cd_builtin:
     pushq %rbp
     movq %rsp, %rbp
@@ -17,6 +17,13 @@ cd_builtin:
     syscall
     testq %rax, %rax
     jns success
+    call error_handler
+    movq %rbp, %rsp
+    popq %rbp
+    ret
+error_handler:
+    pushq %rbp
+    movq %rsp, %rbp
     neg %rax # negative error code stored in %rax
     cmp $2, %rax
     lea no_file_or_directory_error(%rip), %rsi

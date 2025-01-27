@@ -1,7 +1,7 @@
 .section .data
-    binary_command_file: .string "/bin/\0"
     binary_file: .string ""
 .section .rodata
+    binary_command_file: .string "/bin/\0"
     prompt: .string "myshell> "
     new_line: .string "\n"
     cd_command: .string "cd\0"
@@ -16,11 +16,12 @@
 .extern parse_the_arguments
 .extern concatenate
 .extern trim
+.extern error_handler
 main:
     pushq %rbp
     movq %rsp, %rbp
     xorq %rcx, %rcx
-    subq $1024, %rsp # create memory for buffer
+    subq $1032, %rsp # create memory for buffer
 start_loop:
     lea prompt(%rip), %rdi
     mov $9, %rsi
@@ -31,15 +32,10 @@ start_loop:
     mov $1024, %rsi
     call read
     movq %r12, %rdi
-    call args_count
-    call parse_the_arguments
 parse_the_arguments:
     pushq %rbp
     movq %rsp, %rbp
     incq %rax
-    cmp $6, %rax
-    jg ready_the_stack
-stack_ready:
     xorq %rdi, %rdi
     xorq %rsi, %rsi
     xorq %rdx, %rdx
@@ -62,45 +58,15 @@ found_space:
     movb $0, (%r12) # set the space to be null char , so that the string will be null terminated.
     incq %r13
     cmp $2, %r13
-    je second_argument
-    cmp $3, %r13
-    je third_argument
-    cmp $4, %r13
-    je forth_argument
-    cmp $5, %r13
-    je fifth_argument
-    cmp $6, %r13
-    je sixth_argument
-    jmp insert_to_stack_inverse
-ready_the_stack:
-    xorq %r15, %r15
-    pushq $0 # load the envp into stack
-    sub $6, %rax
-    lea (%r15,%rax,8), %rax
-    subq %rax, %rsp
-    jmp stack_ready
-second_argument:
-    lea 1(%r12), %rsi
-    jmp return_to
-third_argument:
-    lea 1(%r12), %rdx
-    jmp return_to
-forth_argument:
-    lea 1(%r12), %rcx
-    jmp return_to
-fifth_argument:
-    lea 1(%r12), %r8
-    jmp return_to
-sixth_argument:
-    lea 1(%r12), %r9
-    jmp return_to
-insert_to_stack_inverse:
-    lea 1(%r12), %r14
-    lea -7(%r13), %r15
-    movq %r14, (%rsp, %r15,8)
+    je set_rsi_to_arguments
     jmp return_to
 found_new_line:
     movb $0, (%r12)
+    movq $0, 1(%r12)
+    jmp execute_command
+set_rsi_to_arguments:
+    lea 1(%r12), %rsi
+    jmp return_to
 execute_command:
     # rdi already stores the command name
 check_if_cd:
@@ -128,7 +94,6 @@ dot:
     incq %rdi
     jmp check_slash
 check_if_exit:
-
     lea exit_command(%rip), %rsi
     call compare
     cmp $1, %rax
@@ -136,8 +101,8 @@ check_if_exit:
     jmp execute_generic_command
 execute_cd:
     popq %rdi
-    popq %rdi
-    popq %rdi
+    popq %rsi
+    popq %rdx
     # now the directory to switch to is at rsi
     pushq %rdi
     movq %rsi, %rdi
@@ -148,7 +113,7 @@ execute_exit:
     popq %rdx
     popq %rsi
     popq %rdi
-    # now the status code is at rsi
+    # now rsi points to the char that represents the status code ?
     pushq %rdi
     movq %rsi, %rdi
     call exit_builtin
@@ -185,13 +150,16 @@ parent_process:
     popq %rsi
     jmp start_loop
 
-
 child_process:
     mov $59, %rax # syscall for execve
     syscall
     # handling errors
-    xorq %rbx, %rbx
+    cmp $0, %rax
+    jl error
+    movq $1, %rbx
     call exit
+error:
+    call error_handler
 
 print:
     pushq %rbp
