@@ -52,7 +52,7 @@ How to Run
 
     Install Git (if you don't have it)
 
-        On Ubuntu/Debian: sudo apt-get update sudo apt-get install git
+        On Ubuntu/Debian: sudo apt-get update && sudo apt-get install git
 
         On macOS: brew install git
 
