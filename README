@@ -4,20 +4,39 @@ The implementation is as follows:
 We will have a loop that outputs the string "myshell>" everytime, and waits for inputs.
 We will check the input if its a "cd" or "exit" command, if so we will handle them manually.
 If it's not a "cd" nor an "exit" command, we will use "fork" syscall to create a child process and then "execve" to change that child process image to the inputted command process image.
+
 We will also have a separate file for the built-in commands, called builtin.s which contains the next functions:
-int cd(char* directory);
-(returns 1 if success -1 if error) - the function itself already handles the errors
-which changes the directory from current directory to the inputted directory.
-void exit(int status); - the function just exits with status code which will be in %rdi (simple syscall)
+1. void cd(char* directory); -> changes the directory from current directory to the inputted directory.
+2. void exit(int status); -> exits with status code which will be in %rdi (simple syscall)
+3. void errorhandler(int errorcode); -> handles the error (outputs the corresponding output)
 
 We will also have a file called "parsing_strings.s" which will have functions useful for parsing strings and comparing them:
-1. int compare(char* str1, char* str2, int length); -> will return 1 if they are equal 0 otherwise
+1. int compare(char* str1, char* str2); -> will return 1 if they are equal 0 otherwise
+2. int argscount(char* buf); -> will return how much argeuments (including the name of the command) are there in the input.
+3. void concatenate(char* str1, char* str2, char* dest) -> will concatenate str1+str2 and store the result in dest.
 
 In the main.s file , the parsing of the input will go as follows:
-execve will need the name of the command (pointer to the string containing that name), which will the pointer to the whole buffer.
-execve will the need the arguments of the command (+flags) - (in assembly, we are actually passing the pointers to those arguments strings, for that
-we will put aside extra memory near the buffer to store the offsets of the arguments strings in the buffer (seperated by a space) - will have max size of 1024 as well to ensure that
-all possible commands are handled.
-then, when calling execve , we will put the first six arguments in rdi,rsi,rdx,rcx,r8,r9, then we would just read the rest from the stack.
+execve structure:
+int execve(const char* filename, const char* argv[], const char* envp[]);
+for the filename, of course, we would need the full path(e.g. pwd -> /bin/pwd)
+for the argv, we would just reserve 8200 bytes in bss that will store pointers to the strings of the arguments (including the name of the command
+calculation : 1024 (maximum seperate strings) * 8 (address size in x86_64) + 8 (8 zero bytes at the end to indicate null termination) = 8200
+of course, by c calling convention and the man page for syscalls:
+filename -> rdi
+argv[] -> rsi
+envp[] -> rdx
+for rdx we would just use zero because we dont use any environment variables.
+
 How will we handle the common errors:
-1.
+the errorcode for each syscall in assembly will be returned at rax (negative)
+so we will neg %rax, and then cmp rax to each possible errorcode(of both chdir and execve) :
+1. ERRNO = 1  -> operation not permitted.
+2. ERRNO = 2  -> no such file or directory error.
+3. ERRNO = 7  -> argument list too long error.
+4. ERRNO = 8  -> exec format error.
+5. ERRNO = 12 -> out of memory error.
+6. ERRNO = 13 -> permission denied error.
+7. ERRNO = 14 -> bad address error.
+8. ERRNO = 20 -> not a directory error.
+9. ERRNO = 22 -> inavlid argument error.
+and output the corresponding string of course {Error: $(Err_message)}
