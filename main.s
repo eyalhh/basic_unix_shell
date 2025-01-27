@@ -75,7 +75,9 @@ return_to:
 
 found_space:
     movb $0, (%rdi) # set the space to be null char , so that the string will be null terminated.
-    incq %r13
+    lea 1(%rdi), %r14
+    cmpb $32, (%r14)
+    je _loop
     jmp set_argv
 
 found_new_line:
@@ -85,6 +87,7 @@ found_new_line:
     jmp execute_command
 
 set_argv:
+    incq %r13
     lea 1(%rdi), %r14
     movq %r14, (%r15,%r13,8)
     jmp return_to
