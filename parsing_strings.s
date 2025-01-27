@@ -4,6 +4,7 @@
 .align 16
 .globl compare
 .globl args_count
+.globl concatenate
 compare:
     pushq %rbp
     movq %rsp, %rbp
@@ -74,6 +75,36 @@ loop__:
     incq %rdi
     jmp loop__
 return_from_length:
+    popq %rdi
+    movq %rbp, %rsp
+    popq %rbp
+    ret
+concatenate:
+    pushq %rbp
+    movq %rsp, %rbp
+    # str1 at rdi
+    # str2 at rsi
+    # stoer pointer to rdi+rsi in rdx
+    pushq %rdi
+    pushq %rsi
+loop___:
+    cmpb $0, (%rdi)
+    je reach_end_of_str1
+    movb (%rdi), %bl
+    movb %bl, (%rdx)
+    incq %rdx
+    incq %rdi
+    jmp loop___
+reach_end_of_str1:
+    movb (%rsi), %bl
+    movb %bl, (%rdx)
+    cmpb $0, %bl
+    je reach_end_of_str2
+    incq %rsi
+    incq %rdx
+    jmp reach_end_of_str1
+reach_end_of_str2:
+    popq %rsi
     popq %rdi
     movq %rbp, %rsp
     popq %rbp

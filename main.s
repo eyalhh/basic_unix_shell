@@ -1,8 +1,11 @@
+.section .data
+    binary_command_file: .string "/bin/\0"
+    binary_file: .string ""
 .section .rodata
     prompt: .string "myshell> "
     new_line: .string "\n"
-    cd_command: .string "cd"
-    exit_command: .string "exit"
+    cd_command: .string "cd\0"
+    exit_command: .string "exit\0"
 .section .text
 .align 16
 .globl main
@@ -11,6 +14,7 @@
 .extern exit_builtin
 .extern args_count
 .extern parse_the_arguments
+.extern concatenate
 main:
     pushq %rbp
     movq %rsp, %rbp
@@ -122,6 +126,7 @@ dot:
     incq %rdi
     jmp check_slash
 check_if_exit:
+
     lea exit_command(%rip), %rsi
     call compare
     cmp $1, %rax
@@ -149,7 +154,42 @@ execute_generic_command:
     popq %rdx
     popq %rsi
     popq %rdi
+    # everything is stored as required, e.g name of command in rdi, the following args passed with the c calling convention.
+    # we could just fork into a child process and then execve syscall and be done with it
+    # we would need to store the full path of the command in rdi so:
+    pushq %rsi
+    pushq %rdx
+    movq %rdi, %rsi
+    leaq binary_file(%rip), %rdx
+    pushq %rdx
+    lea binary_command_file(%rip), %rdi
+    call concatenate
+    # concatenate stores the concatenated string in rdx
+    popq %rdx
+    movq %rdx, %rdi
+    popq %rdx
+    popq %rsi
+    mov $57, %rax
+    syscall # fork system call
+    cmp $0, %rax
+    je child_process
+parent_process:
+    movq %rax, %r14
+    mov $61, %rax # syscall for wait4
+    movq %r14, %rdi
+    pushq $0
+    movq %rsp, %rsi
+    syscall
+    popq %rsi
+    jmp start_loop
+
+
+child_process:
+    mov $59, %rax # syscall for execve
+    syscall
+    # handling errors
     call exit
+
 print:
     pushq %rbp
     movq %rsp, %rbp
