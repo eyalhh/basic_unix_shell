@@ -92,6 +92,8 @@ exit_builtin:
     pushq %rbp
     movq %rsp, %rbp
     # gets status code in rdi -> pointer to a string with this value
+    cmp $0, %rdi
+    je exit_syscall
     call length
     movq %rax, %r12
     xorq %rbx, %rbx
@@ -129,8 +131,9 @@ return_from_check:
 
 got_number:
     # number is at accumulator r11
-    mov $60, %rax
     movq %r11, %rdi
+exit_syscall:
+    mov $60, %rax
     syscall
 
 check_for_minus:
