@@ -22,7 +22,7 @@ We will also have a file called "io.s" which will have input output custom funct
 In the main.s file , the parsing of the input will go as follows:
 execve structure:
 int execve(const char* filename, const char* argv[], const char* envp[]);
-for the filename, of course, we would need the full path(e.g. pwd -> /bin/pwd)
+for the filename, of course, we would need the full path (e.g. pwd -> /bin/pwd)
 for the argv, we would just reserve 8200 bytes in bss that will store pointers to the strings of the arguments (including the name of the command
 calculation : 1024 (maximum seperate strings) * 8 (address size in x86_64) + 8 (8 zero bytes at the end to indicate null termination) = 8200
 of course, by c calling convention and the man page for syscalls:
