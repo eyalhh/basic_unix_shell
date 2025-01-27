@@ -47,3 +47,27 @@ and output the corresponding string of course {Error: $(Err_message)}
 this function would be :
 void error_handler(int errorcode);
 and will live in the builtin.s file.
+
+How to Run
+
+    Install Git (if you don't have it)
+
+        On Ubuntu/Debian: sudo apt-get update sudo apt-get install git
+
+        On macOS: brew install git
+
+        On Windows: Download and install Git from https://git-scm.com/.
+
+    Clone the repository
+
+    Run the following command to clone the repository: git clone https://github.com/eyalhh/basic_unix_shell.git
+
+    Build the project
+
+    Navigate to the project directory: cd <project_directory>
+
+    Then compile the project using: make
+
+    Run the shell emulator
+
+    Finally, run the shell emulator: ./myshell
