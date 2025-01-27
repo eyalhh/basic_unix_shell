@@ -32,8 +32,9 @@ envp[] -> rdx
 for rdx we would just use zero because we dont use any environment variables.
 
 How will we handle the common errors:
-if the syscall succeeds, the errors will be dealt by the new binary file that is being run.
-if not, the errorcode for each syscall in assembly will be returned at rax (negative)
+1. if the command is empty, we would just jump to the main loop.
+2. if the syscall succeeds, the errors will be dealt by the new binary file that is being run.
+3. if not, the errorcode for each syscall in assembly will be returned at rax (negative)
 so we will neg %rax, and then cmp rax to each possible errorcode(of both chdir and execve) :
 1. ERRNO = 1  -> operation not permitted.
 2. ERRNO = 2  -> no such file or directory error.
