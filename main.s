@@ -53,7 +53,7 @@ parse_the_arguments:
     call trim
 
 first_arg:
-    cmpb $32, (%rdi)
+    cmpb $0, (%rdi)
     jne assign_first
     incq %rdi
     jmp first_arg

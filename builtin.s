@@ -110,12 +110,11 @@ reached_end_of_status_code:
     lea -1(%r12), %r9
     cmpq %r9, %r10
     je check_for_minus
-return_from_checking:
     pushq %rax
     decq %rdi
     movb (%rdi), %bl
     subb $48, %bl
-    # now in bl we have the actually digit
+    # now in bl we have the actualy digit
     mulq %rbx
     # result stored in rax
     addq %rax, %r11
@@ -135,8 +134,7 @@ check_for_minus:
     decq %rdi
     cmpb $45, (%rdi)
     je found_minus
-    incq %rdi
-    jmp return_from_checking
+    jmp got_number
 
 found_minus:
     neg %r11
