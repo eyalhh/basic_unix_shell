@@ -15,6 +15,7 @@
 .extern args_count
 .extern parse_the_arguments
 .extern concatenate
+.extern trim
 main:
     pushq %rbp
     movq %rsp, %rbp
@@ -48,6 +49,7 @@ stack_ready:
     xorq %r13, %r13
     incq %r13
     movq %r12, %rdi
+    call trim
 _loop:
     cmpb $32, (%r12)
     je found_space
@@ -188,6 +190,7 @@ child_process:
     mov $59, %rax # syscall for execve
     syscall
     # handling errors
+    xorq %rbx, %rbx
     call exit
 
 print:
@@ -219,7 +222,3 @@ read:
     popq %rbp
     ret
 
-exit_program:
-    mov $60, %rax
-    mov $0, %rbx
-    syscall

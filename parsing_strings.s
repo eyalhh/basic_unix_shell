@@ -5,6 +5,7 @@
 .globl compare
 .globl args_count
 .globl concatenate
+.globl trim
 compare:
     pushq %rbp
     movq %rsp, %rbp
@@ -109,4 +110,24 @@ reach_end_of_str2:
     movq %rbp, %rsp
     popq %rbp
     ret
-
+trim:
+    # char* str is passed on rdi
+    pushq %rbp
+    movq %rsp, %rbp
+    pushq %rdi
+loop____:
+    cmpb $10, (%rdi)
+    je reached_end_of_str
+    incq %rdi
+    jmp loop____
+reached_end_of_str:
+    decq %rdi
+    cmpb $32, (%rdi)
+    jne return_from_trim
+    movb $10, (%rdi)
+    jmp reached_end_of_str
+return_from_trim:
+    popq %rdi
+    movq %rbp, %rsp
+    popq %rbp
+    ret
