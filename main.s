@@ -1,11 +1,15 @@
 .section .data
-    binary_file: .string ""
+
 .section .rodata
     binary_command_file: .string "/bin/\0"
     prompt: .string "myshell> "
     new_line: .string "\n"
     cd_command: .string "cd\0"
     exit_command: .string "exit\0"
+.section .bss
+    binary_file: .space 1024
+    buffer: .space 1024
+    argv: .space 8200
 .section .text
 .align 16
 .globl main
@@ -21,17 +25,14 @@ main:
     pushq %rbp
     movq %rsp, %rbp
     xorq %rcx, %rcx
-    subq $1032, %rsp # create memory for buffer
 start_loop:
     lea prompt(%rip), %rdi
     mov $9, %rsi
     call print
-    movq %rsp, %r12
-    # read gets buffer in rdi, size in rsi
-    movq %r12, %rdi
+    leaq buffer(%rip), %rdi
     mov $1024, %rsi
     call read
-    movq %r12, %rdi
+    leaq buffer(%rip), %rdi
 parse_the_arguments:
     pushq %rbp
     movq %rsp, %rbp
@@ -43,32 +44,42 @@ parse_the_arguments:
     xorq %r8, %r8
     xorq %r9, %r9
     xorq %r13, %r13
-    incq %r13
-    movq %r12, %rdi
+
+    leaq buffer(%rip), %rdi
+    leaq argv(%rip), %r15
     call trim
+first_name:
+    cmpb $0, (%rdi)
+    jne assign_first
+    incq %rdi
+    jmp first_name
+assign_first:
+    movq %rdi, (%r15)
 _loop:
-    cmpb $32, (%r12)
+    cmpb $32, (%rdi)
     je found_space
-    cmpb $10, (%r12)
+    cmpb $10, (%rdi)
     je found_new_line
 return_to:
-    incq %r12
+    incq %rdi
     jmp _loop
 found_space:
-    movb $0, (%r12) # set the space to be null char , so that the string will be null terminated.
+    movb $0, (%rdi) # set the space to be null char , so that the string will be null terminated.
     incq %r13
-    cmp $2, %r13
-    je set_rsi_to_arguments
-    jmp return_to
+    jmp set_argv
 found_new_line:
-    movb $0, (%r12)
-    movq $0, 1(%r12)
+    movb $0, (%rdi)
+    incq %r13
+    movq $0, (%r15, %r13,8)
     jmp execute_command
-set_rsi_to_arguments:
-    lea 1(%r12), %rsi
+set_argv:
+    lea 1(%rdi), %r14
+    movq %r14, (%r15,%r13,8)
     jmp return_to
 execute_command:
-    # rdi already stores the command name
+    leaq buffer(%rip), %rdi
+    leaq argv(%rip), %rsi
+    xorq %rdx, %rdx
 check_if_cd:
     pushq %rdi
     pushq %rsi
@@ -100,12 +111,12 @@ check_if_exit:
     je execute_exit
     jmp execute_generic_command
 execute_cd:
-    popq %rdi
-    popq %rsi
     popq %rdx
-    # now the directory to switch to is at rsi
+    popq %rsi
+    popq %rdi
+    # now the directory to switch to is at **rsi
     pushq %rdi
-    movq %rsi, %rdi
+    movq (%rsi), %rdi
     call cd_builtin
     popq %rdi
     jmp start_loop
@@ -128,6 +139,7 @@ execute_generic_command:
     pushq %rdx
     movq %rdi, %rsi
     leaq binary_file(%rip), %rdx
+    mov %rdx, %r13
     pushq %rdx
     lea binary_command_file(%rip), %rdi
     call concatenate
