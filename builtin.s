@@ -14,6 +14,7 @@
 .globl cd_builtin
 .globl exit_builtin
 .globl error_handler
+.extern length
 
 cd_builtin:
     pushq %rbp
@@ -84,8 +85,57 @@ success:
     movq %rbp, %rsp
     popq %rbp
     ret
+
 exit_builtin:
-    # gets status code in rdi
+    pushq %rbp
+    movq %rsp, %rbp
+    # gets status code in rdi -> pointer to a string with this value
+    call length
+    movq %rax, %r12
+    xorq %rbx, %rbx
+    mov $1, %rax
+    mov $0, %r10
+    mov $10, %r14
+    xorq %r11, %r11
+
+get_to_end:
+    cmpb $0, (%rdi)
+    je reached_end_of_status_code
+    incq %rdi
+    jmp get_to_end
+
+reached_end_of_status_code:
+    cmpq %r10, %r12
+    je got_number
+    lea -1(%r12), %r9
+    cmpq %r9, %r10
+    je check_for_minus
+    pushq %rax
+    decq %rdi
+    movb (%rdi), %bl
+    subb $48, %bl
+    # now in bl we have the actualy digit
+    mulq %rbx
+    # result stored in rax
+    addq %rax, %r11
+    # we would now return to original value of rax
+    popq %rax
+    mulq %r14
+    incq %r10
+    jmp reached_end_of_status_code
+
+got_number:
+    # number is at accumulator r11
     mov $60, %rax
-    movq %rdi, %rbx
+    movq %r11, %rdi
     syscall
+
+check_for_minus:
+    decq %rdi
+    cmpb $45, (%rdi)
+    je found_minus
+    jmp got_number
+
+found_minus:
+    neg %r11
+    jmp got_number

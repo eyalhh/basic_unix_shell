@@ -6,14 +6,18 @@ We will check the input if its a "cd" or "exit" command, if so we will handle th
 If it's not a "cd" nor an "exit" command, we will use "fork" syscall to create a child process and then "execve" to change that child process image to the inputted command process image.
 
 We will also have a separate file for the built-in commands, called builtin.s which contains the next functions:
-1. void cd(char* directory); -> changes the directory from current directory to the inputted directory.
-2. void exit(int status); -> exits with status code which will be in %rdi (simple syscall)
+1. void cd(char* directory); -> changes the directory from current directory to the inputted directory - using syscall chdir.
+2. void exit(char* status); -> exits with status code (string of number) which will be in %rdi -> we would need to convert the string to a number in assembly.
 3. void errorhandler(int errorcode); -> handles the error (outputs the corresponding output)
 
 We will also have a file called "parsing_strings.s" which will have functions useful for parsing strings and comparing them:
 1. int compare(char* str1, char* str2); -> will return 1 if they are equal 0 otherwise
-2. int argscount(char* buf); -> will return how much argeuments (including the name of the command) are there in the input.
-3. void concatenate(char* str1, char* str2, char* dest) -> will concatenate str1+str2 and store the result in dest.
+2. void concatenate(char* str1, char* str2, char* dest) -> will concatenate str1+str2 and store the result in dest.
+3. int length(char* str1) -> will return the length of str1 (until null termination)
+
+We will also have a file called "io.s" which will have input output custom functions useful for printing to stdout and reading from stdin:
+1. void print(char* str1, int length) -> will print str1 to stdout.
+2. void read(char* buf, int maximum_length) -> will read input from stdin and put inside buf.
 
 In the main.s file , the parsing of the input will go as follows:
 execve structure:
@@ -40,3 +44,6 @@ so we will neg %rax, and then cmp rax to each possible errorcode(of both chdir a
 8. ERRNO = 20 -> not a directory error.
 9. ERRNO = 22 -> inavlid argument error.
 and output the corresponding string of course {Error: $(Err_message)}
+this function would be :
+void error_handler(int errorcode);
+and will live in the builtin.s file.

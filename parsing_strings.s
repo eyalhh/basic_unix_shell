@@ -3,6 +3,7 @@
 .globl compare
 .globl concatenate
 .globl trim
+.globl length
 
 compare:
     pushq %rbp

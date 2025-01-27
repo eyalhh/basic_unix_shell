@@ -162,7 +162,7 @@ execute_exit:
     popq %rdx
     popq %rsi
     popq %rdi
-    movq $0, %rdi # naive implementation , converting string to number is a nightmare in assembly.
+    movq 8(%rsi), %rdi
     call exit_builtin
 
 execute_generic_command:
