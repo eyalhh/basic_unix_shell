@@ -20,6 +20,8 @@ cd_builtin:
     pushq %rbp
     movq %rsp, %rbp
     # pointer to string is in %rdi
+    cmp $0, %rdi # if rdi is null , do nothing
+    je success
     mov $80, %rax
     syscall
     testq %rax, %rax
@@ -110,6 +112,7 @@ reached_end_of_status_code:
     lea -1(%r12), %r9
     cmpq %r9, %r10
     je check_for_minus
+return_from_check:
     pushq %rax
     decq %rdi
     movb (%rdi), %bl
@@ -134,7 +137,8 @@ check_for_minus:
     decq %rdi
     cmpb $45, (%rdi)
     je found_minus
-    jmp got_number
+    incq %rdi
+    jmp return_from_check
 
 found_minus:
     neg %r11
