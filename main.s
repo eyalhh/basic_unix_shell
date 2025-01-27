@@ -16,7 +16,6 @@
 .extern cd_builtin
 .extern compare
 .extern exit_builtin
-.extern args_count
 .extern parse_the_arguments
 .extern concatenate
 .extern trim
@@ -48,11 +47,11 @@ parse_the_arguments:
     leaq buffer(%rip), %rdi
     leaq argv(%rip), %r15
     call trim
-first_name:
+first_arg:
     cmpb $0, (%rdi)
     jne assign_first
     incq %rdi
-    jmp first_name
+    jmp first_arg
 assign_first:
     movq %rdi, (%r15)
 _loop:
@@ -100,11 +99,32 @@ check_directory_after:
     cmpb $0, (%rdi)
     je check_if_exit
     movq %rdi, %rsi
-    jmp execute_cd
+    call cd_builtin
+    jmp start_loop
 dot:
     incq %rdi
-    jmp check_slash
+    # if its a dot it can either be ./ or .. (to indicate cd ..)
+    cmpb $47, (%rdi) # if its a slash
+    je check_directory_after
+    cmpb $46, (%rdi) # if its a dot
+    jne execute_generic_command
+    incq %rdi
+    cmpb $0, (%rdi)
+    jne execute_generic_command
+    popq %rdx
+    popq %rsi
+    popq %rdi
+    movq %rdi, %rsi
+    call cd_builtin
+    jmp start_loop
+
 check_if_exit:
+    popq %rdx
+    popq %rsi
+    popq %rdi
+    pushq %rdi
+    pushq %rsi
+    pushq %rdx
     lea exit_command(%rip), %rsi
     call compare
     cmp $1, %rax
@@ -116,7 +136,7 @@ execute_cd:
     popq %rdi
     # now the directory to switch to is at **rsi
     pushq %rdi
-    movq (%rsi), %rdi
+    movq 8(%rsi), %rdi
     call cd_builtin
     popq %rdi
     jmp start_loop
@@ -124,9 +144,7 @@ execute_exit:
     popq %rdx
     popq %rsi
     popq %rdi
-    # now rsi points to the char that represents the status code ?
-    pushq %rdi
-    movq %rsi, %rdi
+    movq $0, %rdi # naive implementation , converting string to number is a nightmare in assembly.
     call exit_builtin
 execute_generic_command:
     popq %rdx
@@ -139,12 +157,9 @@ execute_generic_command:
     pushq %rdx
     movq %rdi, %rsi
     leaq binary_file(%rip), %rdx
-    mov %rdx, %r13
-    pushq %rdx
-    lea binary_command_file(%rip), %rdi
+    leaq binary_command_file(%rip), %rdi
     call concatenate
     # concatenate stores the concatenated string in rdx
-    popq %rdx
     movq %rdx, %rdi
     popq %rdx
     popq %rsi
@@ -153,23 +168,16 @@ execute_generic_command:
     cmp $0, %rax
     je child_process
 parent_process:
-    movq %rax, %r14
+    movq %rax, %rdi
     mov $61, %rax # syscall for wait4
-    movq %r14, %rdi
-    pushq $0
-    movq %rsp, %rsi
+    xorq %rsi, %rsi
     syscall
-    popq %rsi
     jmp start_loop
 
 child_process:
     mov $59, %rax # syscall for execve
     syscall
     # handling errors
-    cmp $0, %rax
-    jl error
-    movq $1, %rbx
-    call exit
 error:
     call error_handler
 

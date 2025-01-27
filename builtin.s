@@ -1,9 +1,13 @@
 .section .rodata
+    operation_not_permitted_error: .string "Error: Operation not permitted\n"
     no_file_or_directory_error: .string "Error: No such file or directory\n"
+    argument_list_too_long_error: .string "Error: Argument list too long\n"
+    exec_format_error: .string "Error: Exec format error\n"
     out_of_memory_error: .string "Error: Out of memory\n"
     permission_denied_error: .string "Error: Permission denied\n"
     bad_address_error: .string "Error: Bad address\n"
     not_a_directory_error: .string "Error: Not a directory\n"
+    invalid_argument_error: .string "Error: Invalid argument\n"
 .section .text
 .align 16
 .globl cd_builtin
@@ -25,9 +29,21 @@ error_handler:
     pushq %rbp
     movq %rsp, %rbp
     neg %rax # negative error code stored in %rax
+    cmp $1, %rax
+    lea operation_not_permitted_error(%rip), %rsi
+    mov $31, %rdx
+    je handle_error
     cmp $2, %rax
     lea no_file_or_directory_error(%rip), %rsi
     mov $33, %rdx
+    je handle_error
+    cmp $7, %rax
+    lea argument_list_too_long_error(%rip), %rsi
+    mov $30, %rdx
+    je handle_error
+    cmp $8, %rax
+    lea exec_format_error(%rip), %rsi
+    mov $24, %rdx
     je handle_error
     cmp $12, %rax
     lea out_of_memory_error(%rip), %rsi
@@ -44,6 +60,10 @@ error_handler:
     cmp $20, %rax
     lea not_a_directory_error(%rip), %rsi
     mov $23, %rdx
+    je handle_error
+    cmp $22, %rax
+    lea invalid_argument_error(%rip), %rsi
+    mov $24, %rdx
     je handle_error
     jmp success
 

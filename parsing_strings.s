@@ -1,9 +1,6 @@
-.section .rodata
-    eyal: .string "eyal\0"
 .section .text
 .align 16
 .globl compare
-.globl args_count
 .globl concatenate
 .globl trim
 compare:
@@ -17,12 +14,13 @@ compare:
     movq %rax, %r14
     pushq %rdi
     movq %rsi, %rdi
+    # now with the second string
     call length
-    movq %rax, %r15
-    cmpq %r14, %r15
+    # rax gets length of str2
+    movq %rax, %r13
+    cmpq %r14, %r13
     popq %rdi
     jne not_equal
-
 loop:
     cmp %r12, %r14
     je equal
@@ -39,27 +37,6 @@ not_equal:
     ret
 equal:
     mov $1, %rax
-    movq %rbp, %rsp
-    popq %rbp
-    ret
-args_count:
-    pushq %rbp
-    movq %rsp, %rbp
-    xorq %rax, %rax
-_loop:
-    # buffer is stored in rdi
-    movb (%rdi), %bl
-    cmp $0x20, %bl
-    je increment_rax
-    cmp $0xA, %bl
-    je return_from_count_args
-    incq %rdi
-    jmp _loop
-increment_rax:
-    incq %rax
-    incq %rdi
-    jmp _loop
-return_from_count_args:
     movq %rbp, %rsp
     popq %rbp
     ret
@@ -85,9 +62,10 @@ concatenate:
     movq %rsp, %rbp
     # str1 at rdi
     # str2 at rsi
-    # stoer pointer to rdi+rsi in rdx
+    # store pointer to rdi+rsi in rdx
     pushq %rdi
     pushq %rsi
+    pushq %rdx
 loop___:
     cmpb $0, (%rdi)
     je reach_end_of_str1
@@ -105,6 +83,7 @@ reach_end_of_str1:
     incq %rdx
     jmp reach_end_of_str1
 reach_end_of_str2:
+    popq %rdx
     popq %rsi
     popq %rdi
     movq %rbp, %rsp
