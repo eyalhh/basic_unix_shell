@@ -114,6 +114,7 @@ reached_end_of_status_code:
     lea -1(%r12), %r9
     cmpq %r9, %r10
     je check_for_minus
+
 return_from_check:
     pushq %rax
     decq %rdi
@@ -132,6 +133,7 @@ return_from_check:
 got_number:
     # number is at accumulator r11
     movq %r11, %rdi
+
 exit_syscall:
     mov $60, %rax
     syscall
