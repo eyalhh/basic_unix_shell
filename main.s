@@ -36,6 +36,8 @@ start_loop:
     mov $1024, %rsi
     call read
     leaq buffer(%rip), %rdi
+    cmpb $10, (%rdi) # if empty command
+    je start_loop
 
 parse_the_arguments:
     pushq %rbp
